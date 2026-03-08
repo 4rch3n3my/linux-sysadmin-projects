@@ -37,13 +37,11 @@ Chaque module contient 4 types d'exercices :
 
 ```
 Proxmox VE 8.4 (192.168.1.50)
-├── rhel-lab       (RHEL 9 / AlmaLinux)  → administration, scripting, MCO
+├── rhel-lab       (RHEL 9 )  → administration, scripting, MCO
 ├── supervision-vm (Debian 12)           → Centreon ou Nagios
 ├── devops-vm      (Debian 12)           → Docker, Ansible, Jenkins
 └── VMs existantes → sources de logs et métriques réelles
 ```
-
-> AlmaLinux ou Rocky Linux sont utilisés comme substituts RHEL — compatibles à 100% sans licence Red Hat.
 
 ---
 
