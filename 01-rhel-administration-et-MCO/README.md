@@ -1,6 +1,6 @@
 # Module 01 — Administration RHEL & Maintien en Conditions Opérationnelles
 
-> RHEL 9 — Administré sur Proxmox VE 8.x
+> RHEL 9 — Administré sur Proxmox VE 8
 > Axes couverts : packages, services, utilisateurs, LVM, sécurité, logs, planification, performances
 
 ---
@@ -49,22 +49,77 @@
 
 ```bash
 # Vérifier la version RHEL
-cat /etc/redhat-release
+[root@localhost ~]# cat /etc/redhat-release 
+Red Hat Enterprise Linux release 9.7 (Plow)
 
-# Mettre à jour le système
-dnf update -y
+# Enregistrer le compte Developpeur RHEL et Mettre à jour le système
+[root@localhost ~]# subscription-manager register --username ******* --password '********************'
+Inscription sur : subscription.rhsm.redhat.com:443/subscription
+Le système a été enregistré avec l'ID : *****-******-**********-*****
+Le nom de système enregistré est : localhost.localdomain
+
+[root@localhost ~]# dnf update -y
+Mise à jour des référentiels de gestion des abonnements.
+En attente de la fin d’exécution du processus ayant l’identifiant (pid) 3102.
+Red Hat Enterprise Linux 9 for x86_64 - AppStream (RPMs)                              22 MB/s |  84 MB     00:03    
+Red Hat Enterprise Linux 9 for x86_64 - BaseOS (RPMs)                                 30 MB/s | 105 MB     00:03    
+Dernière vérification de l’expiration des métadonnées effectuée il y a 0:00:01 le mer. 11 mars 2026 13:27:14.
+Dépendances résolues.
+=====================================================================================================================
+ Paquet                                  Architecture
+                                                Version                       Dépôt                            Taille
+=====================================================================================================================
+Installation:
+ kernel                                  x86_64 5.14.0-611.38.1.el9_7         rhel-9-for-x86_64-baseos-rpms    1.1 M
+Mise à jour:
+ NetworkManager                          x86_64 1:1.54.0-3.el9_7              rhel-9-for-x86_64-baseos-rpms    2.4 M
+ NetworkManager-adsl                     x86_64 1:1.54.0-3.el9_7              rhel-9-for-x86_64-baseos-rpms     32 k
+ NetworkManager-bluetooth                x86_64 1:1.54.0-3.el9_7              rhel-9-for-x86_64-baseos-rpms     58 k
+ NetworkManager-config-server            noarch 1:1.54.0-3.el9_7              rhel-9-for-x86_64-baseos-rpms     18 k
+ NetworkManager-libnm                    x86_64 1:1.54.0-3.el9_7              rhel-9-for-x86_64-baseos-rpms    1.9 M
+.
+.
+.
+.
+  xorg-x11-server-common-1.20.11-32.el9_7.x86_64                                                                     
+Installé:
+  kernel-5.14.0-611.38.1.el9_7.x86_64                    kernel-core-5.14.0-611.38.1.el9_7.x86_64                   
+  kernel-modules-5.14.0-611.38.1.el9_7.x86_64            kernel-modules-core-5.14.0-611.38.1.el9_7.x86_64           
+
+Terminé !
+
 
 # Configurer le hostname
-hostnamectl set-hostname rhel-lab
-hostnamectl status
+[root@localhost ~]# hostnamectl set-hostname rhel9-lab
+[root@localhost ~]# hostname
+rhel9-lab
+[root@localhost ~]# hostnamectl status
+ Static hostname: rhel9-lab
+       Icon name: computer-vm
+         Chassis: vm 🖴
+      Machine ID: 1a176aa52269400f95e02be2db21b169
+         Boot ID: 8772e5624987451b8b22a9fc93d95be2
+  Virtualization: kvm
+Operating System: Red Hat Enterprise Linux 9.7 (Plow)         
+     CPE OS Name: cpe:/o:redhat:enterprise_linux:9::baseos
+          Kernel: Linux 5.14.0-611.5.1.el9_7.x86_64
+    Architecture: x86-64
+ Hardware Vendor: QEMU
+  Hardware Model: Standard PC _i440FX + PIIX, 1996_
+Firmware Version: rel-1.16.3-0-ga6ed6b701f0a-prebuilt.qemu.org
 
 # Configurer le fuseau horaire
-timedatectl set-timezone Europe/Paris
-timedatectl status
+[root@localhost ~]# timedatectl set-timezone Europe/Paris
+[root@localhost ~]# timedatectl status
+               Local time: mer. 2026-03-11 13:50:45 CET
+           Universal time: mer. 2026-03-11 12:50:45 UTC
+                 RTC time: mer. 2026-03-11 12:50:45
+                Time zone: Europe/Paris (CET, +0100)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
 
-# Enregistrer le système sur Red Hat (subscription)
-subscription-manager register --username <user> --password <pass>
-subscription-manager attach --auto
+
 ```
 
 ---
@@ -98,8 +153,8 @@ dnf update --security -y
 
 # Gérer les dépôts
 dnf repolist
-dnf config-manager --enable <repo>
-dnf config-manager --disable <repo>
+dnf config-manager --enable x
+dnf config-manager --disable x
 ```
 
 ---
@@ -107,8 +162,43 @@ dnf config-manager --disable <repo>
 ### 03 — Gestion des services systemd
 
 ```bash
-# Lister tous les services
-systemctl list-units --type=service
+# Lister tous les services ( on peut filtrer par les services failed aussi ) 
+[root@localhost ~]# systemctl list-units --type=service | grep running
+  accounts-daemon.service            loaded active running Accounts Service
+  atd.service                        loaded active running Deferred execution scheduler
+  auditd.service                     loaded active running Security Auditing Service
+  avahi-daemon.service               loaded active running Avahi mDNS/DNS-SD Stack
+  chronyd.service                    loaded active running NTP client/server
+  colord.service                     loaded active running Manage, Install and Generate Color Profiles
+  crond.service                      loaded active running Command Scheduler
+  cups.service                       loaded active running CUPS Scheduler
+  dbus-broker.service                loaded active running D-Bus System Message Bus
+  firewalld.service                  loaded active running firewalld - dynamic firewall daemon
+  fwupd.service                      loaded active running Firmware update daemon
+  gdm.service                        loaded active running GNOME Display Manager
+  irqbalance.service                 loaded active running irqbalance daemon
+  libstoragemgmt.service             loaded active running libstoragemgmt plug-in server daemon
+  mcelog.service                     loaded active running Machine Check Exception Logging Daemon
+  ModemManager.service               loaded active running Modem Manager
+  NetworkManager.service             loaded active running Network Manager
+  packagekit.service                 loaded active running PackageKit Daemon
+  polkit.service                     loaded active running Authorization Manager
+  rhsm.service                       loaded active running RHSM dbus service
+  rhsmcertd.service                  loaded active running Enable periodic update of entitlement certificates.
+  rsyslog.service                    loaded active running System Logging Service
+  rtkit-daemon.service               loaded active running RealtimeKit Scheduling Policy Service
+  sshd.service                       loaded active running OpenSSH server daemon
+  sssd-kcm.service                   loaded active running SSSD Kerberos Cache Manager
+  switcheroo-control.service         loaded active running Switcheroo Control Proxy service
+  systemd-journald.service           loaded active running Journal Service
+  systemd-logind.service             loaded active running User Login Management
+  systemd-udevd.service              loaded active running Rule-based Manager for Device Events and Files
+  tuned-ppd.service                  loaded active running PPD-to-TuneD API Translation Daemon
+  tuned.service                      loaded active running Dynamic System Tuning Daemon
+  udisks2.service                    loaded active running Disk Manager
+  upower.service                     loaded active running Daemon for power management
+  user@1000.service                  loaded active running User Manager for UID 1000
+  wpa_supplicant.service             loaded active running WPA supplicant
 
 # Lister les services en échec
 systemctl list-units --state=failed
@@ -132,7 +222,10 @@ systemctl reload <service>
 systemctl list-dependencies <service>
 
 # Analyser le temps de démarrage
-systemd-analyze
+[root@localhost ~]# systemd-analyze 
+Startup finished in 1.448s (kernel) + 4.705s (initrd) + 1min 3.202s (userspace) = 1min 9.356s 
+graphical.target reached after 1min 3.177s in userspace.
+
 systemd-analyze blame
 ```
 
@@ -142,18 +235,24 @@ systemd-analyze blame
 
 ```bash
 # Créer un utilisateur
-useradd -m -s /bin/bash <user>
-passwd <user>
+[root@localhost ~]# useradd -m -s /bin/bash user1
+[root@localhost ~]# passwd user1
+Changement de mot de passe pour l'utilisateur user1.
+Nouveau mot de passe : 
+Retapez le nouveau mot de passe : 
+passwd : mise à jour réussie de tous les jetons d'authentification.
 
 # Créer un groupe
-groupadd <group>
+[root@localhost ~]# groupadd testgroup
 
 # Ajouter un utilisateur à un groupe
-usermod -aG <group> <user>
+[root@localhost ~]# usermod -aG testgroup user1 
 
 # Vérifier les groupes d'un utilisateur
-id <user>
-groups <user>
+[root@localhost ~]# id user1
+uid=1001(user1) gid=1001(user1) groupes=1001(user1),1002(testgroup)
+[root@localhost ~]# groups user1
+user1 : user1 testgroup
 
 # Modifier un utilisateur
 usermod -l <newname> <oldname>   # renommer
