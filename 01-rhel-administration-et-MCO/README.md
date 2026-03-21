@@ -436,40 +436,183 @@ sudo -l -U alice
 ```bash
 # Lister les disques et partitions disponibles
 # lsblk donne une vue arborescente claire
-lsblk
-fdisk -l
+[root@rhel9-lab ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sda             8:0    0   32G  0 disk 
+├─sda1          8:1    0    1G  0 part /boot
+└─sda2          8:2    0   31G  0 part 
+  ├─rhel-root 253:0    0   29G  0 lvm  /
+  └─rhel-swap 253:1    0    2G  0 lvm  [SWAP]
+sdb             8:16   0   10G  0 disk 
+sr0            11:0    1 12,7G  0 rom  
+
+[root@rhel9-lab ~]# fdisk -l
+Disque /dev/sda : 32 GiB, 34359738368 octets, 67108864 secteurs
+Modèle de disque : QEMU HARDDISK   
+Unités : secteur de 1 × 512 = 512 octets
+Taille de secteur (logique / physique) : 512 octets / 512 octets
+taille d'E/S (minimale / optimale) : 512 octets / 512 octets
+Type d'étiquette de disque : dos
+Identifiant de disque : 0x6aa72a73
+
+Périphérique Amorçage   Début      Fin Secteurs Taille Id Type
+/dev/sda1    *           2048  2099199  2097152     1G 83 Linux
+/dev/sda2             2099200 67108863 65009664    31G 8e LVM Linux
+
+
+Disque /dev/sdb : 10 GiB, 10737418240 octets, 20971520 secteurs
+Modèle de disque : QEMU HARDDISK   
+Unités : secteur de 1 × 512 = 512 octets
+Taille de secteur (logique / physique) : 512 octets / 512 octets
+taille d'E/S (minimale / optimale) : 512 octets / 512 octets
+
+
+Disque /dev/mapper/rhel-root : 28,95 GiB, 31088181248 octets, 60719104 secteurs
+Unités : secteur de 1 × 512 = 512 octets
+Taille de secteur (logique / physique) : 512 octets / 512 octets
+taille d'E/S (minimale / optimale) : 512 octets / 512 octets
+
+
+Disque /dev/mapper/rhel-swap : 2,04 GiB, 2193620992 octets, 4284416 secteurs
+Unités : secteur de 1 × 512 = 512 octets
+Taille de secteur (logique / physique) : 512 octets / 512 octets
+taille d'E/S (minimale / optimale) : 512 octets / 512 octets
+
 
 # --- Création d'un volume LVM ---
 
 # Étape 1 : Initialiser le disque comme Physical Volume (PV)
 # Le disque /dev/sdb devient utilisable par LVM
-pvcreate /dev/sdb
-pvdisplay   # vérification
+[root@rhel9-lab ~]# pvcreate /dev/sdb
+  Physical volume "/dev/sdb" successfully created.
+[root@rhel9-lab ~]# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sda2
+  VG Name               rhel
+  PV Size               <31,00 GiB / not usable 3,00 MiB
+  Allocatable           yes (but full)
+  PE Size               4,00 MiB
+  Total PE              7935
+  Free PE               0
+  Allocated PE          7935
+  PV UUID               pS2AUS-DWPd-koJA-ghOL-vWtw-LXHi-6YzQ02
+   
+  "/dev/sdb" is a new physical volume of "10,00 GiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/sdb
+  VG Name               
+  PV Size               10,00 GiB
+  Allocatable           NO
+  PE Size               0   
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               DfLRGn-mgCk-e73e-sYhT-SGvD-vkAL-IXHmQz
 
 # Étape 2 : Créer un Volume Group (VG)
 # Le VG est un pool de stockage qui regroupe un ou plusieurs PV
 # On peut ajouter d'autres disques au VG plus tard sans interruption
-vgcreate vg_data /dev/sdb
-vgdisplay   # vérification
+[root@rhel9-lab ~]# vgcreate vg_data /dev/sdb
+  Volume group "vg_data" successfully created
+[root@rhel9-lab ~]# vgdisplay
+  --- Volume group ---
+  VG Name               rhel
+  System ID             
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  3
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                2
+  Open LV               2
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <31,00 GiB
+  PE Size               4,00 MiB
+  Total PE              7935
+  Alloc PE / Size       7935 / <31,00 GiB
+  Free  PE / Size       0 / 0   
+  VG UUID               g7VAwp-9tD0-A3Km-zcX8-rNcw-KRLh-86wfH8
+   
+  --- Volume group ---
+  VG Name               vg_data
+  System ID             
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               <10,00 GiB
+  PE Size               4,00 MiB
+  Total PE              2559
+  Alloc PE / Size       0 / 0   
+  Free  PE / Size       2559 / <10,00 GiB
+  VG UUID               26xJ2P-p05J-wjAt-kif1-CWWh-2CcQ-ZNiHI2
 
 # Étape 3 : Créer un Logical Volume (LV)
 # Le LV est l'équivalent d'une partition — c'est lui qu'on formate et monte
 # -L : taille fixe | -l : taille en % du VG (ex: -l 100%FREE)
-lvcreate -L 5G -n lv_data vg_data
+[root@rhel9-lab ~]# lvcreate -L 5G -n lv_data vg_data
+  Logical volume "lv_data" created.
+
 lvdisplay   # vérification
+  --- Logical volume ---
+  LV Path                /dev/vg_data/lv_data
+  LV Name                lv_data
+  VG Name                vg_data
+  LV UUID                KNvSUO-D1C4-3AiQ-qs5V-KVIj-d1fn-IpQbLV
+  LV Write Access        read/write
+  LV Creation host, time rhel9-lab, 2026-03-21 11:22:49 +0100
+  LV Status              available
+  # open                 0
+  LV Size                5,00 GiB
+  Current LE             1280
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:2
 
 # Étape 4 : Formater le LV
 # XFS est le filesystem par défaut sur RHEL — performant et supporte l'extension à chaud
-mkfs.xfs /dev/vg_data/lv_data
+[root@rhel9-lab ~]# mkfs.xfs /dev/vg_data/lv_data
+meta-data=/dev/vg_data/lv_data   isize=512    agcount=4, agsize=327680 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=0
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=1310720, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+Discarding blocks...Done.
+
 
 # Étape 5 : Monter le volume
-mkdir /data
-mount /dev/vg_data/lv_data /data
+[root@rhel9-lab ~]# mkdir /data
+[root@rhel9-lab ~]# mount /dev/vg_data/lv_data /data
+[root@rhel9-lab ~]# df -h /data
+Sys. de fichiers            Taille Utilisé Dispo Uti% Monté sur
+/dev/mapper/vg_data-lv_data   5,0G     68M  4,9G   2% /data
+[root@rhel9-lab ~]# 
+
 
 # Étape 6 : Rendre le montage permanent au reboot
 # Sans cette ligne dans fstab, le volume n'est pas monté après redémarrage
 echo '/dev/vg_data/lv_data /data xfs defaults 0 0' >> /etc/fstab
 mount -a   # vérifier que fstab ne contient pas d'erreur
+[root@rhel9-lab ~]# cat /etc/fstab | grep "/data"
+/dev/vg_data/lv_data /data xfs defaults 0 0
+[root@rhel9-lab ~]# 
 
 # --- Extension à chaud ---
 
